@@ -104,7 +104,7 @@ public class Calculator implements ActionListener {
         }
 
         if (e.getSource() == equals) {
-            String text = textField.getText();
+            String text = postFix(textField.getText());
             for (int i = 0; i < text.length(); i++) {
                 char c = text.charAt(i);
                 if (Character.isDigit(c)) {
@@ -134,5 +134,22 @@ public class Calculator implements ActionListener {
 
     private boolean isOperator(char operator) {
         return operator == '+' || operator == '-' || operator == 'x' || operator == '/' || operator == '%';
+    }
+
+    private String postFix(String input) {
+        StringBuilder postfix = new StringBuilder();
+        Stack<Character> stack = new Stack<>();
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            if (isOperator(c)) {
+                while (!stack.empty() && priority(c) <= priority(stack.peek())) {
+                    postfix.append(stack.pop());
+                }
+                stack.push(c);
+            } else {
+                postfix.append(c);
+            }
+        }
+        return postfix.toString();
     }
 }
