@@ -10,7 +10,7 @@ public class Calculator implements ActionListener {
     JButton[] numberButtons =  new JButton[10];
     JButton[] operatorButtons =  new JButton[8];
     JButton plus, minus, multi, divide;
-    JButton equals, clear, decimal, percent, delete;
+    JButton equals, clear, decimal, delete;
     JPanel panel;
 
     public Calculator () {
@@ -29,7 +29,6 @@ public class Calculator implements ActionListener {
         equals = new JButton("=");
         clear = new JButton("Clear");
         decimal = new JButton(".");
-//        percent = new JButton("%");
         delete = new JButton("Delete");
         operatorButtons[0] = plus;
         operatorButtons[1] = minus;
@@ -40,9 +39,9 @@ public class Calculator implements ActionListener {
         operatorButtons[6] = decimal;
         operatorButtons[7] = equals;
 
-        for (int i = 0; i < operatorButtons.length; i++) {
-            operatorButtons[i].addActionListener(this);
-            operatorButtons[i].setFocusable(false);
+        for (JButton operatorButton : operatorButtons) {
+            operatorButton.addActionListener(this);
+            operatorButton.setFocusable(false);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -72,6 +71,7 @@ public class Calculator implements ActionListener {
         panel.add(numberButtons[0]);
 //        panel.add(percent);
         panel.add(equals);
+        panel.add(divide);
 
         frame.add(panel);
         frame.add(clear);
@@ -79,16 +79,13 @@ public class Calculator implements ActionListener {
         frame.add(textField);
         frame.setVisible(true);
     }
-    public static void main(String[] args) {
-        Calculator calc = new Calculator();
-    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        double num = 0;
 //        char operator;
-        Stack<Double> number = new Stack<Double>();
-        Stack<Character> operator = new Stack<Character>();
+        double result;
+        Stack<Double> number = new Stack<>();
+        Stack<Character> operator = new Stack<>();
 
         for (int i = 0; i < numberButtons.length; i++) {
             if (e.getSource() == numberButtons[i]) {
@@ -103,53 +100,99 @@ public class Calculator implements ActionListener {
             }
         }
 
+        if (e.getSource() == clear) {
+            textField.setText("");
+        }
+
+        if (e.getSource() == delete) {
+            String text = textField.getText();
+            textField.setText(text.substring(0, text.length()-1));
+        }
+
         if (e.getSource() == equals) {
-            String text = postFix(textField.getText());
+            String text = textField.getText();
             for (int i = 0; i < text.length(); i++) {
                 char c = text.charAt(i);
-                if (Character.isDigit(c)) {
-                    while (i < text.length() && Character.isDigit(text.charAt(i))) {
-                        num = num * 10 + text.charAt(i) - '0';
+                if (Character.isDigit(c) || c == '.') {
+                    double num = 0;
+                    boolean decimalMode = false;
+                    double digit;
+                    int fractional = 10;
+
+                    while (i < text.length() && (Character.isDigit(text.charAt(i)) || text.charAt(i) == '.')) {
+                        if (text.charAt(i) == '.') {
+                            decimalMode = true;
+                        } else {
+                            digit = Double.parseDouble(String.valueOf(text.charAt(i)));
+
+                            switch (decimalMode) {
+                                case true:
+                                    num = num + digit/fractional;
+                                    fractional /= 10;
+                                    break;
+                                case false:
+                                    num = 10*num + digit;
+                                    break;
+                            }
+                        }
                         i++;
                     }
                     i--;
                     number.push(num);
                 } else if (isOperator(c)) {
-                    while (!operator.empty() && priority(operator.peek()) < priority(c)) {
-                        double num1 = number.pop();
-                        double num2 = number.pop();
+                    while (!operator.empty() && priority(c) <= priority(operator.peek())) {
+                        double num2 = Double.parseDouble(String.valueOf(number.pop()));
+                        double num1 = Double.parseDouble(String.valueOf(number.pop()));
+                        char operation = operator.pop();
+                        result = calculate(operation, num1, num2);
+                        number.push(result);
                     }
+                    operator.push(c);
+
                 }
             }
+            while (!operator.empty()) {
+                double num2 = Double.parseDouble(String.valueOf(number.pop()));
+                double num1 = Double.parseDouble(String.valueOf(number.pop()));
+                char operation = operator.peek();
+                result = calculate(operation, num1, num2);
+                number.push(result);
+                operator.pop();
+            }
+            result = number.pop();
+            textField.setText(String.valueOf(result));
         }
     }
 
     private int priority(char operator) {
         return switch (operator) {
             case '+', '-' -> 1;
-            case '*', '/' -> 2;
+            case 'X', '/' -> 2;
             default -> -1;
         };
     }
 
     private boolean isOperator(char operator) {
-        return operator == '+' || operator == '-' || operator == 'x' || operator == '/' || operator == '%';
+        return operator == '+' || operator == '-' || operator == 'X' || operator == '/' || operator == '%';
     }
 
-    private String postFix(String input) {
-        StringBuilder postfix = new StringBuilder();
-        Stack<Character> stack = new Stack<>();
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            if (isOperator(c)) {
-                while (!stack.empty() && priority(c) <= priority(stack.peek())) {
-                    postfix.append(stack.pop());
+    private Double calculate(char operator, double num1, double num2) {
+//        double result;
+        return switch (operator) {
+            case '+' -> num1 + num2;
+            case '-' -> num1 - num2;
+            case 'X' -> num1 * num2;
+            case '/' -> {
+                if (num2 == 0) {
+                    throw new ArithmeticException("Division by zero");
                 }
-                stack.push(c);
-            } else {
-                postfix.append(c);
+                yield num1 / num2;
             }
-        }
-        return postfix.toString();
+            default -> 0.0;
+        };
+    }
+
+    public static void main(String[] args) {
+        Calculator calc = new Calculator();
     }
 }
