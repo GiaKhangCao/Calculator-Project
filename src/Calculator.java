@@ -22,6 +22,7 @@ public class Calculator implements ActionListener {
         textField.setBounds(50, 10, 300, 50);
         textField.setEditable(false);
 
+        //Initialize buttons
         plus = new JButton("+");
         minus = new JButton("-");
         multi = new JButton("X");
@@ -80,19 +81,22 @@ public class Calculator implements ActionListener {
         frame.setVisible(true);
     }
 
+    //Operation of Calculator
     @Override
     public void actionPerformed(ActionEvent e) {
 //        char operator;
         double result;
-        Stack<Double> number = new Stack<>();
-        Stack<Character> operator = new Stack<>();
+        Stack<Double> number = new Stack<>();//Stack holds number
+        Stack<Character> operator = new Stack<>();//Stack holds operator
 
+        //Field the text when button hit
         for (int i = 0; i < numberButtons.length; i++) {
             if (e.getSource() == numberButtons[i]) {
                 textField.setText(textField.getText().concat(String.valueOf(i)));
             }
         }
 
+        //Read calculation on textField
         for (JButton operatorButton : operatorButtons) {
             if (operatorButton != equals && operatorButton != clear && operatorButton != delete && e.getSource() == operatorButton) {
                 String operation = String.valueOf(operatorButton.getText());
@@ -100,19 +104,24 @@ public class Calculator implements ActionListener {
             }
         }
 
+        //When "clear" button hit
         if (e.getSource() == clear) {
             textField.setText("");
         }
 
+        //When "delete" hit
         if (e.getSource() == delete) {
             String text = textField.getText();
             textField.setText(text.substring(0, text.length()-1));
         }
 
+        //When "equals" button hit
         if (e.getSource() == equals) {
             String text = textField.getText();
+            //Traverse content on textField
             for (int i = 0; i < text.length(); i++) {
                 char c = text.charAt(i);
+                //If there is a "." or a number
                 if (Character.isDigit(c) || c == '.') {
                     double num = 0;
                     boolean decimalMode = false;
@@ -120,19 +129,17 @@ public class Calculator implements ActionListener {
                     int fractional = 10;
 
                     while (i < text.length() && (Character.isDigit(text.charAt(i)) || text.charAt(i) == '.')) {
+                        //If there is "."
                         if (text.charAt(i) == '.') {
                             decimalMode = true;
                         } else {
                             digit = Double.parseDouble(String.valueOf(text.charAt(i)));
 
-                            switch (decimalMode) {
-                                case true:
-                                    num = num + digit/fractional;
-                                    fractional /= 10;
-                                    break;
-                                case false:
-                                    num = 10*num + digit;
-                                    break;
+                            if (decimalMode) {
+                                num = num + digit/fractional;
+                                fractional /= 10;
+                            } else {
+                                num = 10*num + digit;
                             }
                         }
                         i++;
@@ -151,6 +158,8 @@ public class Calculator implements ActionListener {
 
                 }
             }
+
+            //Calculation
             while (!operator.empty()) {
                 double num2 = Double.parseDouble(String.valueOf(number.pop()));
                 double num1 = Double.parseDouble(String.valueOf(number.pop()));
